@@ -1,0 +1,17 @@
+# Frontend Service — NodePort (accessible from outside the cluster)
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-frontend-svc
+  namespace: python-demo
+  labels:
+    app: python-frontend
+spec:
+  type: NodePort
+  selector:
+    app: python-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080          # access via http://<NODE_IP>:30080
+      protocol: TCP
