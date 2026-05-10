@@ -1,0 +1,16 @@
+# Backend Service — ClusterIP (internal only, frontend accesses via nginx proxy)
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-backend-svc
+  namespace: python-demo
+  labels:
+    app: python-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: python-backend
+  ports:
+    - port: 5000
+      targetPort: 5000
+      protocol: TCP

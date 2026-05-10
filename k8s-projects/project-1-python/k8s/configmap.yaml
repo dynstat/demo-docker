@@ -1,0 +1,10 @@
+# ConfigMap — externalised configuration injected into pods
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: python-backend-config
+  namespace: python-demo
+data:
+  APP_NAME: "python-backend"
+  APP_VERSION: "1.0.0"
+  APP_COLOR: "#6C63FF"

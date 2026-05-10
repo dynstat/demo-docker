@@ -1,0 +1,7 @@
+# Namespace – isolates Project 1 resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: python-demo
+  labels:
+    project: python-demo
