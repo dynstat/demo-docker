@@ -1,54 +1,48 @@
 """
-Project 1 - Python Flask Backend
+Project 1 - Python FastAPI Backend
 A minimal API that exposes pod metadata for Kubernetes teaching.
 """
 
 import os
-import socket
 from datetime import datetime
-from flask import Flask, jsonify
+from fastapi import FastAPI
+import uvicorn
 
-app = Flask(__name__)
+app = FastAPI()
 
-# ---------- Configuration from Environment / ConfigMap ----------
 APP_NAME    = os.environ.get("APP_NAME", "python-backend")
 APP_VERSION = os.environ.get("APP_VERSION", "1.0.0")
-APP_COLOR   = os.environ.get("APP_COLOR", "#6C63FF")   # used by frontend
+APP_COLOR   = os.environ.get("APP_COLOR", "#6C63FF")
 
-# ---------- Endpoints ----------
 
-@app.route("/api/hello")
+@app.get("/api/hello")
 def hello():
-    """Main endpoint – returns greeting + pod hostname (great for load-balancing demo)."""
-    return jsonify({
+    return {
         "message": f"Hello from {APP_NAME}!",
-        "hostname": socket.gethostname(),          # == pod name in K8s
+        "hostname": os.getenv("HOSTNAME", "unknown"),
         "version": APP_VERSION,
         "color": APP_COLOR,
         "timestamp": datetime.utcnow().isoformat()
-    })
+    }
 
 
-@app.route("/api/health")
+@app.get("/api/health")
 def health():
-    """Liveness / readiness probe target."""
-    return jsonify({"status": "healthy", "hostname": socket.gethostname()})
+    return {"status": "healthy", "hostname": os.getenv("HOSTNAME", "unknown")}
 
 
-@app.route("/api/info")
+@app.get("/api/info")
 def info():
-    """Returns environment metadata – useful for inspecting ConfigMaps & env vars."""
-    return jsonify({
+    return {
         "app_name": APP_NAME,
         "app_version": APP_VERSION,
-        "hostname": socket.gethostname(),
-        "platform": "Python / Flask",
+        "hostname": os.getenv("HOSTNAME", "unknown"),
+        "platform": "Python / FastAPI",
         "node_name": os.environ.get("NODE_NAME", "unknown"),
         "pod_ip": os.environ.get("POD_IP", "unknown"),
         "namespace": os.environ.get("POD_NAMESPACE", "unknown"),
-    })
+    }
 
 
-# ---------- Run ----------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

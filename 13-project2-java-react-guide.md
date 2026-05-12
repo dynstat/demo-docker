@@ -1,7 +1,7 @@
 # 13 — Project 2: React + Spring Boot on Kubernetes
 
 > **Stack**: React (Vite) frontend + Java Spring Boot backend  
-> **Environment**: KillerCoda single-node cluster  
+> **Environment**: KillerCoda multi-node cluster  
 > **Ports**: Backend 8080 (ClusterIP) → Frontend 80 (NodePort 30090)  
 > **Namespace**: `java-react-demo`
 
@@ -513,6 +513,8 @@ spec:
       labels:
         app: springboot-backend
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: controlplane
       containers:
         - name: springboot
           image: springboot-backend:v1
@@ -577,6 +579,8 @@ spec:
       labels:
         app: react-frontend
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: controlplane
       containers:
         - name: nginx
           image: react-frontend:v1

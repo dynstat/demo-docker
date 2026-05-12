@@ -11,6 +11,6 @@ spec:
   selector:
     app: python-backend
   ports:
-    - port: 5000
-      targetPort: 5000
+    - port: 8000
+      targetPort: 8000
       protocol: TCP
