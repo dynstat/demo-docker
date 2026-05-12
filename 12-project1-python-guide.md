@@ -1,7 +1,7 @@
 # 12 — Project 1: Python Flask + HTML/CSS/JS on Kubernetes
 
 > **Stack**: Flask backend + Nginx-served frontend  
-> **Environment**: KillerCoda single-node cluster  
+> **Environment**: KillerCoda multi-node cluster  
 > **Ports**: Backend 5000 (ClusterIP) → Frontend 80 (NodePort 30080)  
 > **Namespace**: `python-demo`
 
@@ -432,6 +432,8 @@ spec:
       labels:
         app: python-backend
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: controlplane
       containers:
         - name: flask
           image: python-backend:v1
@@ -533,6 +535,8 @@ spec:
       labels:
         app: python-frontend
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: controlplane
       containers:
         - name: nginx
           image: python-frontend:v1

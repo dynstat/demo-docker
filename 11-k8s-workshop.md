@@ -1,7 +1,7 @@
 # 11 — Kubernetes Hands-On Workshop (KillerCoda)
 
 > **Environment**: KillerCoda Kubernetes Playground  
-> **Cluster**: Single-node (controlplane), K8s v1.35.1, containerd 2.2.1  
+> **Cluster**: Multi-node (controlplane + node01), K8s v1.35.1, containerd 2.2.1  
 > **Goal**: Learn K8s from scratch by building and deploying real applications
 
 ---
@@ -19,12 +19,12 @@
 
 ## 1.1 Understanding Your KillerCoda Cluster
 
-When you open the KillerCoda Kubernetes playground, you get a **single-node cluster**.
+When you open the KillerCoda Kubernetes playground, you get a **multi-node cluster** (controlplane and node01).
 The `controlplane` node acts as BOTH the master (runs control plane) AND the worker (runs your pods).
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                   KillerCoda Single-Node Cluster                │
+│                   KillerCoda Multi-Node Cluster                 │
 │                                                                 │
 │  ┌───────────────────────────────────────────────────────────┐  │
 │  │                    controlplane node                      │  │
@@ -422,7 +422,7 @@ kubectl delete pod test-pod
 ```
 ┌──────────────────── Part 1 Summary ─────────────────────────┐
 │                                                              │
-│  ✅ KillerCoda = single-node cluster (controlplane)         │
+│  ✅ KillerCoda = multi-node cluster                         │
 │  ✅ Container runtime = containerd 2.2.1 (NOT Docker)       │
 │  ✅ Three CLI tools:                                        │
 │       docker  → build images                                │

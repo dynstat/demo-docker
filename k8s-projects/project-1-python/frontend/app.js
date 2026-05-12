@@ -1,9 +1,9 @@
 /**
  * K8s Python Demo — Frontend Logic
- * Calls the Flask backend through the Kubernetes Service.
+ * Calls the FastAPI backend through the Kubernetes Service.
  *
  * The backend URL is resolved via the Nginx reverse-proxy rule
- * defined in nginx.conf:  /api/* → http://python-backend-svc:5000
+ * defined in nginx.conf:  /api/* → http://python-backend-svc:8000
  */
 
 const API_BASE = "/api";
