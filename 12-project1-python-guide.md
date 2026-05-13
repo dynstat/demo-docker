@@ -60,6 +60,16 @@ exit
 
 ## Step 3: Create Namespace
 
+```yaml
+# k8s/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: python-demo
+  labels:
+    project: python-demo
+```
+
 ```bash
 kubectl apply -f k8s/namespace.yaml
 kubectl get namespace python-demo
@@ -78,6 +88,19 @@ kubectl get namespace python-demo
 ---
 
 ## Step 4: Create ConfigMap
+
+```yaml
+# k8s/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: python-backend-config
+  namespace: python-demo
+data:
+  APP_NAME: "python-backend"
+  APP_VERSION: "1.0.0"
+  APP_COLOR: "#6C63FF"
+```
 
 ```bash
 kubectl apply -f k8s/configmap.yaml
@@ -109,6 +132,72 @@ APP_VERSION:  1.0.0
 
 ## Step 5: Deploy Backend
 
+```yaml
+# k8s/backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-backend
+  namespace: python-demo
+  labels:
+    app: python-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-backend
+  template:
+    metadata:
+      labels:
+        app: python-backend
+    spec:
+      containers:
+        - name: fastapi
+          image: python-backend:v1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: python-backend-config
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+```
+
 ```bash
 kubectl apply -f k8s/backend-deployment.yaml
 
@@ -130,6 +219,25 @@ kubectl logs -l app=python-backend -n python-demo
 
 ## Step 6: Create Backend Service (ClusterIP)
 
+```yaml
+# k8s/backend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-backend-svc
+  namespace: python-demo
+  labels:
+    app: python-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: python-backend
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+```
+
 ```bash
 kubectl apply -f k8s/backend-service.yaml
 kubectl get svc -n python-demo
@@ -150,6 +258,66 @@ kubectl run test --image=busybox --rm -it --restart=Never -n python-demo -- \
 ---
 
 ## Step 7: Deploy Frontend
+
+```yaml
+# k8s/frontend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-frontend
+  namespace: python-demo
+  labels:
+    app: python-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: python-frontend
+  template:
+    metadata:
+      labels:
+        app: python-frontend
+    spec:
+      containers:
+        - name: nginx
+          image: python-frontend:v1
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 30m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+```
+
+```yaml
+# k8s/frontend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-frontend-svc
+  namespace: python-demo
+  labels:
+    app: python-frontend
+spec:
+  type: NodePort
+  selector:
+    app: python-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+      protocol: TCP
+```
 
 ```bash
 kubectl apply -f k8s/frontend-deployment.yaml
