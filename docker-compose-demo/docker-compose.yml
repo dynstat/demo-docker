@@ -30,7 +30,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: demodb
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
     networks:      # <--- Attach to network
       - demo-net
 
