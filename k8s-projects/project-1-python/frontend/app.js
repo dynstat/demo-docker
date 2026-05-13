@@ -36,7 +36,9 @@ async function callApi() {
     const res = await fetch(`${API_BASE}/hello`);
     const data = await res.json();
     renderJSON("response", data);
-  } catch (e) { showError("response", e); }
+  } catch (e) {
+    showError("response", e);
+  }
 }
 
 async function fetchInfo() {
@@ -44,7 +46,9 @@ async function fetchInfo() {
     const res = await fetch(`${API_BASE}/info`);
     const data = await res.json();
     renderJSON("info", data);
-  } catch (e) { showError("info", e); }
+  } catch (e) {
+    showError("info", e);
+  }
 }
 
 async function checkHealth() {
@@ -52,7 +56,9 @@ async function checkHealth() {
     const res = await fetch(`${API_BASE}/health`);
     const data = await res.json();
     renderJSON("health", data);
-  } catch (e) { showError("health", e); }
+  } catch (e) {
+    showError("health", e);
+  }
 }
 
 // ---------- Load-Balancing Demo ----------
