@@ -1,63 +1,82 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>K8s Python Demo</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;700&display=swap" rel="stylesheet" />
-</head>
-<body>
-  <div class="grain"></div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>K8s Python Demo</title>
+        <link rel="stylesheet" href="style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;500;700&display=swap"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+        <div class="grain"></div>
 
-  <header>
-    <div class="logo">⎈</div>
-    <h1>Kubernetes <span class="accent">Python</span> Demo</h1>
-    <p class="subtitle">Project 1 — Flask Backend + Static Frontend</p>
-  </header>
+        <header>
+            <div class="logo">⎈</div>
+            <h1>Kubernetes <span class="accent">Python</span> Demo</h1>
+            <p class="subtitle">
+                Project 1 — FastAPI Backend + Static Frontend
+            </p>
+        </header>
 
-  <main>
-    <!-- Call API Card -->
-    <section class="card" id="api-card">
-      <h2>🔗 API Response</h2>
-      <button id="btn-call" onclick="callApi()">Call /api/hello</button>
-      <div id="response" class="response-box">
-        <span class="placeholder">Click the button to call the backend API…</span>
-      </div>
-    </section>
+        <main>
+            <!-- Call API Card -->
+            <section class="card" id="api-card">
+                <h2>🔗 API Response</h2>
+                <button id="btn-call" onclick="callApi()">
+                    Call /api/hello
+                </button>
+                <div id="response" class="response-box">
+                    <span class="placeholder"
+                        >Click the button to call the backend API…</span
+                    >
+                </div>
+            </section>
 
-    <!-- Pod Info Card -->
-    <section class="card" id="pod-card">
-      <h2>🖥️ Pod Info</h2>
-      <button onclick="fetchInfo()">Fetch /api/info</button>
-      <div id="info" class="response-box">
-        <span class="placeholder">Pod metadata will appear here…</span>
-      </div>
-    </section>
+            <!-- Pod Info Card -->
+            <section class="card" id="pod-card">
+                <h2>🖥️ Pod Info</h2>
+                <button onclick="fetchInfo()">Fetch /api/info</button>
+                <div id="info" class="response-box">
+                    <span class="placeholder"
+                        >Pod metadata will appear here…</span
+                    >
+                </div>
+            </section>
 
-    <!-- Health Card -->
-    <section class="card" id="health-card">
-      <h2>💚 Health Check</h2>
-      <button onclick="checkHealth()">Check /api/health</button>
-      <div id="health" class="response-box">
-        <span class="placeholder">Health status will appear here…</span>
-      </div>
-    </section>
+            <!-- Health Card -->
+            <section class="card" id="health-card">
+                <h2>💚 Health Check</h2>
+                <button onclick="checkHealth()">Check /api/health</button>
+                <div id="health" class="response-box">
+                    <span class="placeholder"
+                        >Health status will appear here…</span
+                    >
+                </div>
+            </section>
 
-    <!-- Load Balancing Demo -->
-    <section class="card wide" id="lb-card">
-      <h2>⚖️ Load Balancing Demo</h2>
-      <p class="hint">Hit the API multiple times to see different pod hostnames when scaled.</p>
-      <button onclick="loadBalanceDemo()">Send 10 Requests</button>
-      <div id="lb-results" class="lb-grid"></div>
-    </section>
-  </main>
+            <!-- Load Balancing Demo -->
+            <section class="card wide" id="lb-card">
+                <h2>⚖️ Load Balancing Demo</h2>
+                <p class="hint">
+                    Hit the API multiple times to see different pod hostnames
+                    when scaled.
+                </p>
+                <button onclick="loadBalanceDemo()">Send 10 Requests</button>
+                <div id="lb-results" class="lb-grid"></div>
+            </section>
+        </main>
 
-  <footer>
-    <p>Built for the <strong>K8s Workshop</strong> — running on KillerCoda</p>
-  </footer>
+        <footer>
+            <p>
+                Built for the <strong>K8s Workshop</strong> — running on
+                KillerCoda
+            </p>
+        </footer>
 
-  <script src="app.js"></script>
-</body>
+        <script src="app.js"></script>
+    </body>
 </html>

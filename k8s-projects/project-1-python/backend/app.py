@@ -5,14 +5,15 @@ A minimal API that exposes pod metadata for Kubernetes teaching.
 
 import os
 from datetime import datetime
-from fastapi import FastAPI
+
 import uvicorn
+from fastapi import FastAPI
 
 app = FastAPI()
 
-APP_NAME    = os.environ.get("APP_NAME", "python-backend")
+APP_NAME = os.environ.get("APP_NAME", "python-backend")
 APP_VERSION = os.environ.get("APP_VERSION", "1.0.0")
-APP_COLOR   = os.environ.get("APP_COLOR", "#6C63FF")
+APP_COLOR = os.environ.get("APP_COLOR", "#6C63FF")
 
 
 @app.get("/api/hello")
@@ -22,7 +23,7 @@ def hello():
         "hostname": os.getenv("HOSTNAME", "unknown"),
         "version": APP_VERSION,
         "color": APP_COLOR,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
