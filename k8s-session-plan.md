@@ -18,21 +18,21 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Without K8s: You have 50 containers across 10 machines          │
+│  Without K8s: You have 50 containers across 10 machines        │
 │                                                                 │
-│  ❌ Who restarts crashed containers?                            │
-│  ❌ How do you update all 50 without downtime?                  │
-│  ❌ How do you load balance?                                    │
-│  ❌ How do you scale up/down automatically?                     │
-│  ❌ Where are logs? Who monitors health?                        │
+│  ❌ Who restarts crashed containers?                           │
+│  ❌ How do you update all 50 without downtime?                 │
+│  ❌ How do you load balance?                                   │
+│  ❌ How do you scale up/down automatically?                    │
+│  ❌ Where are logs? Who monitors health?                       │
 │                                                                 │
-│  With Kubernetes: You manage "desired state", K8s makes it so   │
+│  With Kubernetes: You manage "desired state", K8s makes it so │
 │                                                                 │
 │  ✅ "Keep 3 replicas running" → K8s restarts if one dies      │
-│  ✅ "Update to v2" → K8s does rolling update                    │
+│  ✅ "Update to v2" → K8s does rolling update                   │
 │  ✅ Service → automatic load balancing                          │
-│  ✅ HPA → auto-scale based on CPU/memory                        │
-│  ✅ Built-in health checks, logging integrated                  │
+│  ✅ HPA → auto-scale based on CPU/memory                       │
+│  ✅ Built-in health checks, logging integrated                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -43,9 +43,9 @@
 │                    KUBERNETES ARCHITECTURE                             │
 │                                                                        │
 │   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │                      CONTROL PLANE (Master)                     │  │
+│   │                      CONTROL PLANE (Master)                    │  │
 │   │   ┌──────────┐  ┌───────────┐  ┌──────────────────────┐        │  │
-│   │   │API Server│  │ Scheduler│  │Controller Manager    │        │  │
+│   │   │API Server│  │ Scheduler│  │Controller Manager   │        │  │
 │   │   │(frontdoor)│  │(decides  │  │(watches and fixes)   │        │  │
 │   │   └────┬─────┘  │ where to │  └──────────┬───────────┘        │  │
 │   │        │        │ put pods) │             │                    │  │
@@ -56,13 +56,13 @@
 │   │           └─────────┘                                          │  │
 │   └─────────────────────────────────────────────────────────────────┘  │
 │            │                                                        │
-│            │ (kubelet talks to API Server)                         │
+│            │ (kubelet talks to API Server)                          │
 │            ▼                                                        │
 │   ┌─────────────────────────────────────────────────────────────────┐  │
 │   │                      WORKER NODE (node01)                      │  │
 │   │   ┌─────────┐ ┌──────────┐ ┌──────────────────┐               │  │
 │   │   │ kubelet │ │kube-proxy│ │ containerd       │               │  │
-│   │   │(foreman)│ │(network) │ │ (runs containers)│               │  │
+│   │   │(foreman)│ │(network) │ │ (runs containers) │               │  │
 │   │   └────┬────┘ └────┬─────┘ └────────┬───────────┘               │  │
 │   │        │          │                 │                           │  │
 │   │        ▼          ▼                 ▼                           │  │
@@ -84,6 +84,50 @@
 | Controller Manager | Watches and fixes desired state | Supervisor |
 | kubelet | Manages containers on each node | Foreman on each floor |
 | kube-proxy | Network traffic routing | Reception switchboard |
+
+## 1.3 How a Request Flows Through K8s
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                    COMPLETE K8s REQUEST FLOW                        │
+│                                                                      │
+│  1. You run: kubectl apply -f deployment.yaml                      │
+│       │                                                              │
+│       ▼                                                              │
+│  2. kubectl → HTTPS → API Server                                    │
+│       │                                                              │
+│       ▼                                                              │
+│  3. API Server validates YAML → stores in etcd                     │
+│       │                                                              │
+│       ▼                                                              │
+│  4. Deployment Controller (in controller-manager) sees new object │
+│     → creates ReplicaSet                                           │
+│       │                                                              │
+│       ▼                                                              │
+│  5. ReplicaSet Controller creates Pod objects (in etcd)             │
+│     (Pods are "Pending" — no node assigned yet)                     │
+│       │                                                              │
+│       ▼                                                              │
+│  6. Scheduler watches for unassigned Pods                          │
+│     → picks best node → updates pod.spec.nodeName                  │
+│       │                                                              │
+│       ▼                                                              │
+│  7. kubelet on that node sees "my pod got assigned here"           │
+│     → calls containerd via CRI                                      │
+│       │                                                              │
+│       ▼                                                              │
+│  8. containerd pulls image → creates sandbox → starts container  │
+│       │                                                              │
+│       ▼                                                              │
+│  9. Pod is Running! kubelet reports status back to API Server       │
+│       │                                                              │
+│       ▼                                                              │
+│  10. kube-proxy updates iptables rules for any Services            │
+│      that select this Pod                                           │
+│                                                                      │
+│  Total time: typically 2-10 seconds                                 │
+└──────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -472,7 +516,7 @@ kubectl get namespace my-namespace
 │  5. Look for "Required" fields - must be present              │
 │                                                                 │
 │  6. Click on nested objects to drill down                    │
-│    → containerSpec → env → envVar                            │
+│    → containerSpec → env → envVar                             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -698,6 +742,17 @@ kubectl get events -n <ns> --sort-by='.lastTimestamp'
 | Namespace | Resource isolation |
 | kubectl apply | Declarative (desired state) |
 | kubectl run/create | Imperative (do this now) |
+
+---
+
+# Production Best Practices (From docker-kubernetes skill)
+
+1. **One process per container** - A container should do exactly one thing
+2. **Never use :latest tag** - Pin image tags in production
+3. **Always use health probes** - liveness + readiness for every deployment
+4. **Set resource requests/limits** - requests for scheduler, limits for protection
+5. **Use exec form CMD** - `CMD ["node", "server.js"]` not `CMD node server.js`
+6. **Declarative over imperative** - All cluster state in YAML, checked into git
 
 ---
 
