@@ -12,7 +12,7 @@
 
 ---
 
-# PART 1: Architecture Mental Model (30 min)
+# PART 1: Architecture Mental Model
 
 ## 1.1 The Problem Kubernetes Solves
 
@@ -131,7 +131,7 @@
 
 ---
 
-# PART 2: Imperative Commands - Live Demo (30 min)
+# PART 2: Imperative Commands
 
 ## 2.1 Verify Your Cluster
 
@@ -240,7 +240,7 @@ kubectl delete namespace demo
 
 ---
 
-# PART 3: Declarative YAML - All K8s Objects (30 min)
+# PART 3: Declarative YAML - All K8s Objects
 
 ## 3.1 Pod YAML
 
@@ -482,7 +482,7 @@ kubectl get namespace my-namespace
 
 ---
 
-# PART 4: How to Read Official Docs for YAML Reference (15 min)
+# PART 4: How to Read Official Docs for YAML Reference
 
 ## 4.1 Official Documentation Links
 
@@ -560,7 +560,7 @@ spec:
 
 ---
 
-# PART 5: Project Demo on Killercoda - Deploy Python App (15 min)
+# PART 5: Project Demo on Killercoda - Deploy Python App
 
 ## 5.1 Pre-Demo: Verify Killercoda Environment
 
