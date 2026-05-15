@@ -26,6 +26,20 @@ spec:
             - configMapRef:
                 name: python-backend-config
           env:
+            - name: DB_HOST
+              value: "postgres-svc"
+            - name: DB_NAME
+              value: "demodb"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-secret
+                  key: POSTGRES_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-secret
+                  key: POSTGRES_PASSWORD
             - name: POD_NAME
               valueFrom:
                 fieldRef:

@@ -1,6 +1,6 @@
 # Project 1: Python Backend on Kubernetes
 
-> **Stack**: FastAPI backend + Nginx frontend  
+> **Stack**: FastAPI backend + PostgreSQL + Nginx frontend  
 > **Environment**: Killercoda 2-node cluster (controlplane + node01)  
 > **Namespace**: `python-demo`
 
@@ -12,10 +12,71 @@
 |----------|------|-----------|
 | Namespace | python-demo | — |
 | ConfigMap | python-backend-config | python-demo |
+| Secret | postgres-db-secret | python-demo |
+| PVC | postgres-pvc | python-demo |
+| DB Deployment | postgres-db | python-demo |
+| DB Service | postgres-svc | python-demo (ClusterIP :5432) |
 | Backend Deployment | python-backend | python-demo |
 | Backend Service | python-backend-svc | python-demo (ClusterIP :8000) |
 | Frontend Deployment | python-frontend | python-demo |
 | Frontend Service | python-frontend-svc | python-demo (NodePort :30080) |
+
+---
+
+## Architecture Flow
+
+```text
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                           YOUR LAPTOP / BROWSER                               │
+│                           http://<controlplane-ip>:30080                      │
+└──────────────────────────────────────┬────────────────────────────────────────┘
+                                       │ 1. External Request hits NodePort
+                                       ▼
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                      KUBERNETES CLUSTER (Namespace: python-demo)              │
+│                                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────────┐  │
+│  │                            controlplane Node                            │  │
+│  │  (Runs API Server, Scheduler, etc. - usually no user pods here)         │  │
+│  │                                                                         │  │
+│  │  ┌─────────────────────────┐ 2. Service (NodePort) is open on ALL nodes.│  │
+│  │  │   python-frontend-svc   │    Traffic enters controlplane and is      │  │
+│  │  │   (NodePort: 30080)     │    routed across the cluster network.      │  │
+│  └──┴───────────┬─────────────┴────────────────────────────────────────────┘  │
+│                 │                                                             │
+│  ┌──────────────▼──────────────────────────────────────────────────────────┐  │
+│  │                                node01 Node                              │  │
+│  │                                                                         │  │
+│  │  ┌─────────────────────────┐ 3. Routes to the Nginx Pod                  │  │
+│  │  │   python-frontend Pod   │    (IP: 192.168.1.12)                      │  │
+│  │  │   (Nginx / Port 80)     │                                            │  │
+│  │  └───────────┬─────────────┘                                            │  │
+│  │              │                                                          │  │
+│  │  ┌───────────▼─────────────┐ 4. Proxies to ClusterIP Service             │  │
+│  │  │   python-backend-svc    │    (10.100.45.54:8000)                     │  │
+│  │  └─────────┬─────┬─────────┘                                            │  │
+│  │            │     │                                                      │  │
+│  │      ┌─────▼┐    ▼─────┐     5. Load balances across replicas           │  │
+│  │      │backend│    │backend│       (IP: 192.168.1.51)                    │  │
+│  │      │ Pod 1 │    │ Pod 2 │       (IP: 192.168.1.118)                   │  │
+│  │      └────┬──┘    └──┬────┘                                             │  │
+│  │           │          │                                                  │  │
+│  │      ┌────▼──────────▼─────┐ 6. Backend pods call DB service            │  │
+│  │      │     postgres-svc    │    (10.102.241.179:5432)                   │  │
+│  │      └───────────┬─────────┘                                            │  │
+│  │                  │                                                      │  │
+│  │      ┌───────────▼─────────┐ 7. Routes to Database Pod                  │  │
+│  │      │     postgres-db     │    (IP: 192.168.1.10)                      │  │
+│  │      │     Pod (:5432)     │                                            │  │
+│  │      └───────────┬─────────┘                                            │  │
+│  │                  │                                                      │  │
+│  │      ┌───────────▼─────────┐ 8. Data persisted via PVC                  │  │
+│  │      │     postgres-pvc    │    (Stored on node01 disk)                 │  │
+│  │      └─────────────────────┘                                            │  │
+│  └─────────────────────────────────────────────────────────────────────────┘  │
+│                                                                               │
+└───────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -58,8 +119,11 @@ exit
 
 ---
 
-## Step 3: Create Namespace
+## Step 3: Create Namespace & Infrastructure
 
+We need a Namespace for isolation, a Secret for DB passwords, a PVC for DB storage, and a ConfigMap.
+
+### 3.1 Namespace
 ```yaml
 # k8s/namespace.yaml
 apiVersion: v1
@@ -70,25 +134,38 @@ metadata:
     project: python-demo
 ```
 
-```bash
-kubectl apply -f k8s/namespace.yaml
-kubectl get namespace python-demo
+### 3.2 Secret (Postgres Credentials)
+```yaml
+# k8s/db-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-db-secret
+  namespace: python-demo
+type: Opaque
+data:
+  # Values are base64 encoded: 'user' and 'password123'
+  POSTGRES_USER: dXNlcg==
+  POSTGRES_PASSWORD: cGFzc3dvcmQxMjM=
 ```
 
-**Without `-n` flag** — queries default namespace:
-```bash
-kubectl get namespace  # Shows all namespaces
+### 3.3 PersistentVolumeClaim (DB Storage)
+```yaml
+# k8s/postgres-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: python-demo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ```
 
-**With `-n` flag** — queries specific namespace:
-```bash
-kubectl get namespace python-demo
-```
-
----
-
-## Step 4: Create ConfigMap
-
+### 3.4 ConfigMap (App Settings)
 ```yaml
 # k8s/configmap.yaml
 apiVersion: v1
@@ -103,35 +180,90 @@ data:
 ```
 
 ```bash
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/db-secret.yaml
+kubectl apply -f k8s/postgres-pvc.yaml
 kubectl apply -f k8s/configmap.yaml
 ```
 
-**View ConfigMap:**
+---
+
+## Step 4: Deploy Database
+
+### 4.1 PostgreSQL Deployment
+```yaml
+# k8s/postgres-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-db
+  namespace: python-demo
+spec:
+  selector:
+    matchLabels:
+      app: postgres-db
+  template:
+    metadata:
+      labels:
+        app: postgres-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "demodb"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+```
+
+### 4.2 PostgreSQL Service (ClusterIP)
+```yaml
+# k8s/postgres-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-svc
+  namespace: python-demo
+spec:
+  selector:
+    app: postgres-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP
+```
+
 ```bash
-# Wrong - queries default namespace (empty result):
-kubectl get configmaps
+kubectl apply -f k8s/postgres-deployment.yaml
+kubectl apply -f k8s/postgres-service.yaml
 
-# Correct - specify namespace:
-kubectl get configmaps -n python-demo
-kubectl describe configmap python-backend-config -n python-demo
+# Wait for DB to be running
+kubectl get pods -n python-demo -w
 ```
-
-**Output:**
-```
-Name:         python-backend-config
-Namespace:    python-demo
-Data          ====
-APP_COLOR:    #6C63FF
-APP_NAME:     python-backend
-APP_VERSION:  1.0.0
-```
-
-> **What is ConfigMap?** Stores configuration data (key-value pairs) injected into pods as environment variables via `envFrom`.
 
 ---
 
 ## Step 5: Deploy Backend
 
+### 5.1 Backend Deployment
 ```yaml
 # k8s/backend-deployment.yaml
 apiVersion: apps/v1
@@ -161,6 +293,20 @@ spec:
             - configMapRef:
                 name: python-backend-config
           env:
+            - name: DB_HOST
+              value: "postgres-svc"
+            - name: DB_NAME
+              value: "demodb"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-secret
+                  key: POSTGRES_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-secret
+                  key: POSTGRES_PASSWORD
             - name: POD_NAME
               valueFrom:
                 fieldRef:
@@ -198,27 +344,7 @@ spec:
               memory: 128Mi
 ```
 
-```bash
-kubectl apply -f k8s/backend-deployment.yaml
-
-# Check pods (requires -n flag!)
-kubectl get pods -n python-demo -o wide
-
-# Watch status
-kubectl get pods -n python-demo --watch
-```
-
-**View logs:**
-```bash
-kubectl logs -l app=python-backend -n python-demo
-```
-
-**If `ErrImageNeverPull`:** Images not imported to containerd on node. Go back to Step 2.
-
----
-
-## Step 6: Create Backend Service (ClusterIP)
-
+### 5.2 Backend Service
 ```yaml
 # k8s/backend-service.yaml
 apiVersion: v1
@@ -239,26 +365,18 @@ spec:
 ```
 
 ```bash
+kubectl apply -f k8s/backend-deployment.yaml
 kubectl apply -f k8s/backend-service.yaml
-kubectl get svc -n python-demo
+
+# Check pods
+kubectl get pods -n python-demo -o wide
 ```
-
-**Service port format: `port:targetPort`**
-- `port: 8000` — internal service port
-- `targetPort: 8000` — container port
-
-**Test internal DNS:**
-```bash
-kubectl run test --image=busybox --rm -it --restart=Never -n python-demo -- \
-  wget -qO- http://python-backend-svc:8000/api/hello
-```
-
-> **Teaching point:** `python-backend-svc` resolves via CoreDNS to ClusterIP, which load-balances across all backend pods.
 
 ---
 
-## Step 7: Deploy Frontend
+## Step 6: Deploy Frontend
 
+### 6.1 Frontend Deployment
 ```yaml
 # k8s/frontend-deployment.yaml
 apiVersion: apps/v1
@@ -299,6 +417,7 @@ spec:
               memory: 64Mi
 ```
 
+### 6.2 Frontend Service
 ```yaml
 # k8s/frontend-service.yaml
 apiVersion: v1
@@ -315,7 +434,7 @@ spec:
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 30080
+      nodePort: 30080 # access via http://<NODE_IP>:30080
       protocol: TCP
 ```
 
@@ -323,18 +442,13 @@ spec:
 kubectl apply -f k8s/frontend-deployment.yaml
 kubectl apply -f k8s/frontend-service.yaml
 
-# View all resources in namespace
+# View all resources
 kubectl get all -n python-demo
 ```
 
-**Service port format: `port:nodePort`**
-- `80:30080` means: Service port 80 → External NodePort 30080
-
-> **Access on:** `http://<node-ip>:30080` (works from any node)
-
 ---
 
-## Step 8: Access the Application
+## Step 7: Access the Application
 
 ```bash
 # Get node IPs
@@ -342,12 +456,12 @@ kubectl get nodes -o wide
 
 # Test from controlplane
 curl http://localhost:30080
-curl http://localhost:30080/api/hello
 ```
+Open port 30080 in the Killercoda UI to see the frontend. You can now interact with the PostgreSQL database.
 
 ---
 
-## Step 9: Scale & Load Balancing
+## Step 8: Scale & Load Balancing
 
 ```bash
 # Scale to 4 replicas
@@ -355,50 +469,15 @@ kubectl scale deployment python-backend --replicas=4 -n python-demo
 
 # Verify pods on different nodes
 kubectl get pods -n python-demo -o wide
-
-# Test load balancing - hit API multiple times
-for i in {1..8}; do
-  kubectl run test$i --image=busybox --rm -it --restart=Never -n python-demo -- \
-  wget -qO- http://python-backend-svc:8000/api/hello | grep -o '"hostname":"[^"]*"'
-done
-```
-
-Notice different hostnames — K8s Service load-balances across all pods.
-
-**Scale down:**
-```bash
-kubectl scale deployment python-backend --replicas=2 -n python-demo
 ```
 
 ---
 
-## Step 10: Observability Commands
+## Step 9: Cleanup
 
 ```bash
-# All resources in namespace
-kubectl get all -n python-demo
-
-# Endpoints (pods behind service)
-kubectl get endpoints -n python-demo
-
-# Describe resources
-kubectl describe deployment python-backend -n python-demo
-kubectl describe svc python-backend-svc -n python-demo
-
-# View pod environment variables
-kubectl exec -it <pod-name> -n python-demo -- env | grep -E "APP_|POD_|NODE_"
-```
-
----
-
-## Step 11: Cleanup
-
-```bash
-# Delete all resources (one command)
+# Delete all resources
 kubectl delete -f k8s/
-
-# Verify
-kubectl get all -n python-demo  # Should show: No resources found
 
 # Or delete entire namespace
 kubectl delete namespace python-demo
