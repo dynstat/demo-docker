@@ -41,6 +41,41 @@ async function callApi() {
   }
 }
 
+async function loadItems() {
+  try {
+    const res = await fetch(`${API_BASE}/items`);
+    const data = await res.json();
+    const itemList = document.getElementById("itemList");
+    if (data.error) {
+        itemList.innerHTML = `<li style="color:#ff4d6a">Error: ${data.error}</li>`;
+        return;
+    }
+    itemList.innerHTML = data.map(item => `<li>${item}</li>`).join("");
+  } catch (e) {
+    const itemList = document.getElementById("itemList");
+    itemList.innerHTML = `<li style="color:#ff4d6a">Error: ${e.message}</li>`;
+  }
+}
+
+async function addItem() {
+  const nameInput = document.getElementById("itemName");
+  const name = nameInput.value;
+  if (!name) return;
+  
+  try {
+    await fetch(`${API_BASE}/items?name=${encodeURIComponent(name)}`, { method: "POST" });
+    nameInput.value = "";
+    loadItems(); // Refresh the list
+  } catch (e) {
+    console.error("Failed to add item:", e);
+  }
+}
+
+// Load items initially
+document.addEventListener("DOMContentLoaded", () => {
+    loadItems();
+});
+
 async function fetchInfo() {
   try {
     const res = await fetch(`${API_BASE}/info`);

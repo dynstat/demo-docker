@@ -36,6 +36,20 @@
                 </div>
             </section>
 
+            <!-- Database Demo Card -->
+            <section class="card wide" id="db-card">
+                <h2>🗄️ Database Demo (PostgreSQL)</h2>
+                <p class="hint">Interact with the PostgreSQL database connected via PersistentVolumeClaim.</p>
+                <div style="margin-bottom: 1rem;">
+                    <input type="text" id="itemName" placeholder="Enter item name" style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+                    <button onclick="addItem()">Add to DB</button>
+                </div>
+                <h3>Items in Database:</h3>
+                <div id="db-response" class="response-box">
+                    <ul id="itemList" style="margin-left: 1.5rem;"></ul>
+                </div>
+            </section>
+
             <!-- Pod Info Card -->
             <section class="card" id="pod-card">
                 <h2>🖥️ Pod Info</h2>
