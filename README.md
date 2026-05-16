@@ -6,6 +6,49 @@ Comprehensive training guide covering containerization and orchestration from ab
 
 ---
 
+## Repository Structure
+
+```text
+.
+├── docker-compose-demo/      # Multi-container app with Docker Compose
+│   ├── backend/              # Python Flask API
+│   └── frontend/             # Nginx + Static HTML
+└── k8s-projects/
+    └── project-1-python/     # Full-stack Python app for K8s
+        ├── backend/          # Python API
+        ├── frontend/         # JS Frontend
+        └── k8s/              # Kubernetes Manifests (Deployments, Services, etc.)
+├── 00-overview-big-picture.md
+├── 01-linux-fundamentals.md
+├── 01a-virtualization-vs-containers.md
+├── 01b-linux-namespaces-and-cgroups.md
+├── 02-docker-fundamentals.md
+├── 02a-oci-and-container-runtimes.md
+├── 03-dockerfiles.md
+├── 04-volumes.md
+├── 04b-docker-networking.md
+├── 05-docker-compose.md
+├── 06-embedded.md
+├── 07-kubernetes.md
+├── 07b-kubernetes-components.md
+├── 07c-kubernetes-objects.md
+├── 07d-kubernetes-networking.md
+├── 07e-kubernetes-rbac.md
+├── 07f-kubernetes-storage.md
+├── 07g-onpremise-vs-cloud.md
+├── 08-kubernetes-production.md
+├── 09-sample-files.md
+├── 10-quick-reference.md
+├── 11-k8s-workshop.md        # Hands-on Workshop
+├── 12-project1-python-guide.md
+├── 13-project2-java-react-guide.md
+├── 14-k8s-demo-cmd.md        # Live Demo Scripts
+├── architecture-deep-dive.md
+└── k8s-s.md                  # K8s Quick Summary
+```
+
+---
+
 ## Prerequisites
 
 - Basic command line knowledge (Linux/Mac/Windows)
@@ -23,7 +66,9 @@ Comprehensive training guide covering containerization and orchestration from ab
 | ------- | --------------------------------------------------------------------- | ----------------------------------------------------------- |
 | **00**  | [Big Picture Overview](./00-overview-big-picture.md)                  | Complete architecture: Frontend+Backend+DB+Docker+K8s+CI/CD |
 | **01a** | [Virtualization vs Containers](./01a-virtualization-vs-containers.md) | Evolution story, VMs vs Containers, Linux concepts          |
+| **01b** | [Namespaces & Cgroups](./01b-linux-namespaces-and-cgroups.md)         | The magic behind container isolation                        |
 | **02a** | [OCI & Container Runtimes](./02a-oci-and-container-runtimes.md)       | Standards, containerd, why K8s dropped Docker               |
+| **-**   | [Architecture Deep Dive](./architecture-deep-dive.md)                 | Deep technical dive into modern infrastructure             |
 
 ### Docker Fundamentals
 
@@ -35,6 +80,7 @@ Comprehensive training guide covering containerization and orchestration from ab
 | **04**  | [Volumes](./04-volumes.md)                         | Data persistence, bind mounts, volumes       |
 | **04b** | [Docker Networking](./04b-docker-networking.md)    | Bridge, host, overlay networks, port mapping |
 | **05**  | [Docker Compose](./05-docker-compose.md)           | Multi-container applications                 |
+| **-**   | [Compose Demo](./docker-compose-demo/README.md)    | Practical Docker Compose project             |
 
 ### Kubernetes Fundamentals
 
@@ -47,19 +93,23 @@ Comprehensive training guide covering containerization and orchestration from ab
 | **07e** | [K8s RBAC](./07e-kubernetes-rbac.md)               | ServiceAccounts, Roles, RoleBindings, security    |
 | **07f** | [K8s Storage & Scale](./07f-kubernetes-storage.md) | PVs, PVCs, StorageClasses, HPA, VPA               |
 | **07g** | [Cloud vs On-Premise](./07g-onpremise-vs-cloud.md) | EKS/GKE vs kubeadm, considerations                |
+| **11**  | [K8s Hands-On Workshop](./11-k8s-workshop.md)      | Complete workshop guide for KillerCoda            |
+| **-**   | [K8s Quick Summary](./k8s-s.md)                    | Condensed reference for K8s concepts              |
 
-### Production & Specialized Topics
+### Projects & Production
 
-| Part   | Topic                                           | Description                                  |
-| ------ | ----------------------------------------------- | -------------------------------------------- |
-| **08** | [K8s Production](./08-kubernetes-production.md) | Secrets, ConfigMaps, Ingress, best practices |
-| **06** | [Embedded Systems](./06-embedded.md)            | FPGA, RPi, Smart Cards, TPM (specialized)    |
-| **09** | [Sample Files](./09-sample-files.md)            | Complete working examples                    |
-| **10** | [Quick Reference](./10-quick-reference.md)      | Command cheat sheet                          |
+| Part   | Topic                                              | Description                                  |
+| ------ | -------------------------------------------------- | -------------------------------------------- |
+| **08** | [K8s Production](./08-kubernetes-production.md)    | Secrets, ConfigMaps, Ingress, best practices |
+| **12** | [Project 1: Python Guide](./12-project1-python-guide.md) | Full-stack Python deployment guide           |
+| **13** | [Project 2: Java/React](./13-project2-java-react-guide.md) | Java backend + React frontend guide          |
+| **06** | [Embedded Systems](./06-embedded.md)               | FPGA, RPi, Smart Cards, TPM (specialized)    |
+| **09** | [Sample Files](./09-sample-files.md)               | Complete working examples                    |
+| **10** | [Quick Reference](./10-quick-reference.md)         | Command cheat sheet                          |
 
 ### Live Demos
 
-- [Live Demo Scripts](./LIVE_DEMO_SCRIPTS.md) - Step-by-step demonstration guides
+- [Live Demo Scripts](./14-k8s-demo-cmd.md) - Step-by-step demonstration guides
 
 ---
 
@@ -80,12 +130,19 @@ Comprehensive training guide covering containerization and orchestration from ab
    - See Linux concepts (namespaces, cgroups) in action
    - Practical demos proving isolation
 
-3. [OCI & Container Runtimes](./02a-oci-and-container-runtimes.md)
+3. [Namespaces & Cgroups](./01b-linux-namespaces-and-cgroups.md)
+   - Deep dive into the kernel features that enable containers
+   - Hands-on look at how isolation is achieved
+
+4. [OCI & Container Runtimes](./02a-oci-and-container-runtimes.md)
    - Understand container standards
    - Learn about containerd and the runtime stack
    - Understand why Kubernetes dropped Docker (but images still work!)
 
-**Time**: 3-4 hours  
+5. [Architecture Deep Dive](./architecture-deep-dive.md)
+   - Advanced look at the architectural patterns
+
+**Time**: 4-5 hours  
 **Outcome**: Solid mental model of containerization ecosystem
 
 ---
@@ -94,28 +151,29 @@ Comprehensive training guide covering containerization and orchestration from ab
 
 **Goal**: Build, run, and manage Docker containers confidently.
 
-4. [Linux Fundamentals](./01-linux-fundamentals.md)
+6. [Linux Fundamentals](./01-linux-fundamentals.md)
    - Essential Linux commands
    - Understand filesystem, processes, networking
 
-5. [Docker Fundamentals](./02-docker-fundamentals.md)
+7. [Docker Fundamentals](./02-docker-fundamentals.md)
    - Images vs containers
    - Docker commands (run, pull, push, exec)
    - Container lifecycle
 
-6. [Dockerfiles](./03-dockerfiles.md)
+8. [Dockerfiles](./03-dockerfiles.md)
    - Write Dockerfiles from scratch
    - Layer optimization
    - Multi-stage builds
 
-7. [Volumes](./04-volumes.md) & [Networking](./04b-docker-networking.md)
+9. [Volumes](./04-volumes.md) & [Networking](./04b-docker-networking.md)
    - Persist data beyond container lifecycle
    - Connect containers together
    - Expose services to the host
 
-8. [Docker Compose](./05-docker-compose.md)
-   - Define multi-container applications
-   - One command to start entire stack
+10. [Docker Compose](./05-docker-compose.md)
+    - Define multi-container applications
+    - One command to start entire stack
+    - [Hands-on Compose Demo](./docker-compose-demo/README.md)
 
 **Time**: 6-8 hours  
 **Outcome**: Can containerize any application
@@ -126,63 +184,71 @@ Comprehensive training guide covering containerization and orchestration from ab
 
 **Goal**: Deploy and manage containerized applications in production.
 
-9. [Kubernetes Basics](./07-kubernetes.md)
-   - Architecture and core concepts
-   - Pods, Deployments, Services
-   - Basic kubectl commands
+11. [Kubernetes Basics](./07-kubernetes.md)
+    - Architecture and core concepts
+    - Pods, Deployments, Services
+    - Basic kubectl commands
 
-10. [K8s Components](./07b-kubernetes-components.md)
+12. [K8s Components](./07b-kubernetes-components.md)
     - Control plane deep dive
     - Worker node components
     - How Kubernetes works internally
 
-11. [K8s Objects](./07c-kubernetes-objects.md)
+13. [K8s Objects](./07c-kubernetes-objects.md)
     - All workload types
     - When to use what
     - StatefulSets for databases
 
-12. [K8s Networking](./07d-kubernetes-networking.md) & [RBAC](./07e-kubernetes-rbac.md)
+14. [K8s Networking](./07d-kubernetes-networking.md) & [RBAC](./07e-kubernetes-rbac.md)
     - How pods communicate
     - Load balancing and DNS
     - Secure your cluster
 
-13. [K8s Storage & Scaling](./07f-kubernetes-storage.md)
+15. [K8s Storage & Scaling](./07f-kubernetes-storage.md)
     - Persistent storage in K8s
     - Auto-scaling applications
     - Resource management
 
-**Time**: 8-10 hours  
+16. [K8s Hands-On Workshop](./11-k8s-workshop.md)
+    - Comprehensive practical exercises on KillerCoda
+
+**Time**: 10-12 hours  
 **Outcome**: Can deploy production-grade applications
 
 ---
 
-### Module 4: Production Deployment
+### Module 4: Projects & Production
 
-**Goal**: Run applications in real production environments.
+**Goal**: Run real-world applications and projects.
 
-14. [K8s Production Patterns](./08-kubernetes-production.md)
+17. [K8s Production Patterns](./08-kubernetes-production.md)
     - Secrets management
     - Ingress for routing
     - Health checks and lifecycle
 
-15. [Cloud vs On-Premise](./07g-onpremise-vs-cloud.md)
+18. [Cloud vs On-Premise](./07g-onpremise-vs-cloud.md)
     - Deployment options
     - Trade-offs and considerations
     - Setting up your own cluster
 
-16. [Sample Files](./09-sample-files.md)
-    - Complete real-world examples
-    - Full-stack applications
-    - Copy and customize
+19. [Project 1: Python Deployment](./12-project1-python-guide.md)
+    - Full-stack Python app on K8s
+    - [Source Code](./k8s-projects/project-1-python/)
 
-**Time**: 4-6 hours  
-**Outcome**: Production-ready knowledge
+20. [Project 2: Java & React](./13-project2-java-react-guide.md)
+    - Complex multi-language stack deployment
+
+21. [Sample Files](./09-sample-files.md)
+    - Complete real-world examples
+
+**Time**: 6-8 hours  
+**Outcome**: Production-ready knowledge with practical project experience
 
 ---
 
 ### Module 5: Specialized (Optional)
 
-17. [Embedded Systems](./06-embedded.md)
+22. [Embedded Systems](./06-embedded.md)
     - Containers on resource-constrained devices
     - FPGA, Raspberry Pi, Smart Cards
 
@@ -279,7 +345,7 @@ kubectl exec -it <pod-name> -- bash
 
 ### Use Live Demo Scripts
 
-The [LIVE_DEMO_SCRIPTS.md](./LIVE_DEMO_SCRIPTS.md) contains step-by-step demonstrations:
+The [Live Demo Scripts](./14-k8s-demo-cmd.md) contains step-by-step demonstrations:
 - Building your first Docker image
 - Running multi-container apps with Compose
 - Deploying to Kubernetes
@@ -298,21 +364,21 @@ The [LIVE_DEMO_SCRIPTS.md](./LIVE_DEMO_SCRIPTS.md) contains step-by-step demonst
 ## Training Duration Estimates
 
 ```
-Total Time: 20-30 hours minimum
+Total Time: 30-40 hours minimum
 
 Fast Track (Intense):
-├── Module 1: 4 hours
-├── Module 2: 6 hours
-├── Module 3: 8 hours
-└── Module 4: 4 hours
-Total: 22 hours (over 5 days, 4-5 hours/day)
+├── Module 1: 5 hours
+├── Module 2: 8 hours
+├── Module 3: 12 hours
+└── Module 4: 8 hours
+Total: 33 hours (over 7 days, 4-5 hours/day)
 
 Comfortable Pace (Recommended):
-├── Module 1: 6 hours (Week 1)
-├── Module 2: 10 hours (Week 2-3)
-├── Module 3: 12 hours (Week 4-5)
-└── Module 4: 6 hours (Week 6)
-Total: 34 hours (over 6 weeks, 5-6 hours/week)
+├── Module 1: 8 hours (Week 1)
+├── Module 2: 12 hours (Week 2-3)
+├── Module 3: 15 hours (Week 4-5)
+└── Module 4: 10 hours (Week 6-7)
+Total: 45 hours (over 7 weeks, 6-7 hours/week)
 ```
 
 ---
