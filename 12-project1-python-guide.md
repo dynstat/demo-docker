@@ -10,7 +10,7 @@
 
 | Resource | Name | Namespace |
 |----------|------|-----------|
-| Namespace | python-demo | — |
+| Namespace | python-demo | - |
 | ConfigMap | python-backend-config | python-demo |
 | Secret | postgres-db-secret | python-demo |
 | PVC | postgres-pvc | python-demo |
@@ -26,56 +26,98 @@
 ## Architecture Flow
 
 ```text
-┌───────────────────────────────────────────────────────────────────────────────┐
-│                           YOUR LAPTOP / BROWSER                               │
-│                           http://<controlplane-ip>:30080                      │
-└──────────────────────────────────────┬────────────────────────────────────────┘
-                                       │ 1. External Request hits NodePort
-                                       ▼
-┌───────────────────────────────────────────────────────────────────────────────┐
-│                      KUBERNETES CLUSTER (Namespace: python-demo)              │
-│                                                                               │
-│  ┌─────────────────────────────────────────────────────────────────────────┐  │
-│  │                            controlplane Node                            │  │
-│  │  (Runs API Server, Scheduler, etc. - usually no user pods here)         │  │
-│  │                                                                         │  │
-│  │  ┌─────────────────────────┐ 2. Service (NodePort) is open on ALL nodes.│  │
-│  │  │   python-frontend-svc   │    Traffic enters controlplane and is      │  │
-│  │  │   (NodePort: 30080)     │    routed across the cluster network.      │  │
-│  └──┴───────────┬─────────────┴────────────────────────────────────────────┘  │
-│                 │                                                             │
-│  ┌──────────────▼──────────────────────────────────────────────────────────┐  │
-│  │                                node01 Node                              │  │
-│  │                                                                         │  │
-│  │  ┌─────────────────────────┐ 3. Routes to the Nginx Pod                  │  │
-│  │  │   python-frontend Pod   │    (IP: 192.168.1.12)                      │  │
-│  │  │   (Nginx / Port 80)     │                                            │  │
-│  │  └───────────┬─────────────┘                                            │  │
-│  │              │                                                          │  │
-│  │  ┌───────────▼─────────────┐ 4. Proxies to ClusterIP Service             │  │
-│  │  │   python-backend-svc    │    (10.100.45.54:8000)                     │  │
-│  │  └─────────┬─────┬─────────┘                                            │  │
-│  │            │     │                                                      │  │
-│  │      ┌─────▼┐    ▼─────┐     5. Load balances across replicas           │  │
-│  │      │backend│    │backend│       (IP: 192.168.1.51)                    │  │
-│  │      │ Pod 1 │    │ Pod 2 │       (IP: 192.168.1.118)                   │  │
-│  │      └────┬──┘    └──┬────┘                                             │  │
-│  │           │          │                                                  │  │
-│  │      ┌────▼──────────▼─────┐ 6. Backend pods call DB service            │  │
-│  │      │     postgres-svc    │    (10.102.241.179:5432)                   │  │
-│  │      └───────────┬─────────┘                                            │  │
-│  │                  │                                                      │  │
-│  │      ┌───────────▼─────────┐ 7. Routes to Database Pod                  │  │
-│  │      │     postgres-db     │    (IP: 192.168.1.10)                      │  │
-│  │      │     Pod (:5432)     │                                            │  │
-│  │      └───────────┬─────────┘                                            │  │
-│  │                  │                                                      │  │
-│  │      ┌───────────▼─────────┐ 8. Data persisted via PVC                  │  │
-│  │      │     postgres-pvc    │    (Stored on node01 disk)                 │  │
-│  │      └─────────────────────┘                                            │  │
-│  └─────────────────────────────────────────────────────────────────────────┘  │
-│                                                                               │
-└───────────────────────────────────────────────────────────────────────────────┘
++----------------------------------------------------------------------------------------+
+|                               USER LAPTOP / BROWSER                                    |
+|                                                                                        |
+|                        Browser opens: http://172.30.1.2:30080                         |
+|                                                                                        |
+|        NOTE: Browser DOES NOT know Kubernetes DNS names like python-backend-svc        |
++--------------------------------------------+-------------------------------------------+
+                                             |
+                                             |  1. External HTTP Request
+                                             v
+
++----------------------------------------------------------------------------------------+
+|                     KUBERNETES CLUSTER  (Namespace: python-demo)                       |
+|                                                                                        |
+|  +-----------------------------------------------------------------------------------+ |
+|  |                   controlplane Node  -  IP: 172.30.1.2                            | |
+|  |                                                                                   | |
+|  |   Components: API Server | Scheduler | Controller Manager | kube-proxy            | |
+|  |                                                                                   | |
+|  |   kube-proxy iptables rule:                                                       | |
+|  |     IF  dst == 172.30.1.2:30080  -->  forward to frontend service/pod             | |
+|  |                                                                                   | |
+|  |                    +--------------------------------+                              | |
+|  |                    |      NodePort Service          |                              | |
+|  |                    |  python-frontend-svc : 30080   |                              | |
+|  |                    +---------------+----------------+                              | |
+|  +------------------------------------|-------------------------------------------------+ |
+|                                       |  2. kube-proxy DNAT rewrites destination         |
+|                                       v                                                  |
+|  +-----------------------------------------------------------------------------------+  |
+|  |                       node01 Node  -  IP: 172.30.2.2                              |  |
+|  |                                                                                   |  |
+|  |  +-----------------------------------------------------------------------------+  |  |
+|  |  |   Frontend nginx Pod  -  IP: 192.168.1.198  -  Port: 80                     |  |  |
+|  |  |                                                                             |  |  |
+|  |  |   nginx serves:  index.html  |  CSS  |  JavaScript                         |  |  |
+|  |  +--------------------------------------+--------------------------------------+  |  |
+|  |                                         |  3. Browser receives HTML / JS          |  |
+|  |                                         v                                         |  |
+|  |   Browser executes:  fetch("/api/hello")                                          |  |
+|  |                                                                                   |  |
+|  |   IMPORTANT: Browser calls SAME HOST --> http://172.30.1.2:30080/api/hello       |  |
+|  |              (NOT http://python-backend-svc:8000)                                |  |
+|  +------------------------------------|-------------------------------------------------+  |
+|                                       |  4. Request enters cluster AGAIN                  |
+|                                       v                                                   |
+|  +-----------------------------------------------------------------------------------+   |
+|  |                         Frontend nginx  (Reverse Proxy)                           |   |
+|  |                                                                                   |   |
+|  |   nginx.conf:                                                                     |   |
+|  |     location /api {                                                               |   |
+|  |         proxy_pass http://python-backend-svc:8000;                               |   |
+|  |     }                                                                             |   |
+|  |                                                                                   |   |
+|  |   nginx CAN resolve Kubernetes DNS -- it runs INSIDE the cluster                 |   |
+|  +------------------------------------|-------------------------------------------------+   |
+|                                       |  5. CoreDNS resolves service name                  |
+|                                       v                                                    |
+|          +----------------------------------------------------------+                     |
+|          |  python-backend-svc  -  ClusterIP 10.97.9.236:8000       |                     |
+|          +-----------------------------+----------------------------+                     |
+|                                        |  kube-proxy load balances                        |
+|                          +-------------+-------------+                                    |
+|                          v                           v                                    |
+|        +-----------------------------+   +-----------------------------+                  |
+|        |       Backend Pod 1         |   |       Backend Pod 2         |                  |
+|        |   IP: 192.168.1.64          |   |   IP: 192.168.1.87          |                  |
+|        |       Port: 8000            |   |       Port: 8000            |                  |
+|        +--------------+--------------+   +--------------+--------------+                  |
+|                       |                                 |                                 |
+|                       +-----------------+---------------+                                 |
+|                                         |  6. Backend accesses DB service                 |
+|                                         v                                                  |
+|          +----------------------------------------------------------+                     |
+|          |  postgres-svc  -  ClusterIP 10.101.6.160:5432            |                     |
+|          +-----------------------------+----------------------------+                     |
+|                                        |                                                   |
+|                                        v                                                   |
+|                   +-------------------------------------+                                  |
+|                   |          postgres-db Pod            |                                  |
+|                   |       IP: 192.168.1.165             |                                  |
+|                   |           Port: 5432                |                                  |
+|                   +------------------+------------------+                                  |
+|                                      |                                                     |
+|                                      v                                                     |
+|                   +-------------------------------------+                                  |
+|                   |           postgres-pvc              |                                  |
+|                   |      Persistent Volume Claim        |                                  |
+|                   |       stores DB data safely         |                                  |
+|                   +-------------------------------------+                                  |
+|                                                                                            |
++--------------------------------------------------------------------------------------------+
 ```
 
 ---
@@ -491,7 +533,7 @@ kubectl delete namespace python-demo
 |---------|---------|--------|
 | Namespace isolation | `-n python-demo` | Resources scoped to namespace |
 | ConfigMap injection | `envFrom` in deployment | Externalize config from code |
-| Image handling | `ctr -n k8s.io` | Docker ≠ containerd stores |
+| Image handling | `ctr -n k8s.io` | Docker ? containerd stores |
 | Service discovery | `http://python-backend-svc:8000` | CoreDNS resolves service name |
 | Load balancing | Multiple backend replicas | Service distributes traffic |
 | NodePort | External access | `node-ip:30080` accessible from outside |
