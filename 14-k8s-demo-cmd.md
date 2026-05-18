@@ -163,6 +163,9 @@ kubectl apply -f k8s/frontend-service.yaml
 # NOTE: Ensure Ingress Controller is installed first:
 # kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
 
+# In Killercoda, patch the controller to use port 80 directly on the host:
+# kubectl patch deployment ingress-nginx-controller -n ingress-nginx --type='json' -p='[{"op": "replace", "path": "/spec/template/spec/hostNetwork", "value": true}]'
+
 kubectl apply -f k8s/ingress.yaml
 ```
 
