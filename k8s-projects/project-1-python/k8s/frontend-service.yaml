@@ -1,4 +1,4 @@
-# Frontend Service — NodePort (accessible from outside the cluster)
+# Frontend Service — ClusterIP (now exposed via Ingress)
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,11 +7,10 @@ metadata:
   labels:
     app: python-frontend
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: python-frontend
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 30080 # access via http://<NODE_IP>:30080
       protocol: TCP

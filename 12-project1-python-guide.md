@@ -19,7 +19,9 @@
 | Backend Deployment | python-backend | python-demo |
 | Backend Service | python-backend-svc | python-demo (ClusterIP :8000) |
 | Frontend Deployment | python-frontend | python-demo |
-| Frontend Service | python-frontend-svc | python-demo (NodePort :30080) |
+| Frontend Service | python-frontend-svc | python-demo | ClusterIP :80 |
+| Ingress | python-app-ingress | python-demo | Host: python-app.local |
+
 
 ---
 
@@ -505,36 +507,68 @@ metadata:
   labels:
     app: python-frontend
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: python-frontend
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 30080 # access via http://<NODE_IP>:30080
       protocol: TCP
+```
+
+### Step 6.2: Create Ingress (The Entry Point)
+
+**Note:** If your cluster doesn't have an Ingress Controller, install it first:
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+```
+
+```yaml
+# k8s/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: python-app-ingress
+  namespace: python-demo
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: python-frontend-svc
+            port:
+              number: 80
 ```
 
 ```bash
 kubectl apply -f k8s/frontend-deployment.yaml
 kubectl apply -f k8s/frontend-service.yaml
+kubectl apply -f k8s/ingress.yaml
 
 # View all resources
 kubectl get all -n python-demo
+kubectl get ingress -n python-demo
 ```
 
 ---
 
 ## Step 7: Access the Application
 
-```bash
-# Get node IPs
-kubectl get nodes -o wide
+Since we removed the `host` restriction, you can access the app directly via the Node IP or localhost.
 
-# Test from controlplane
-curl http://localhost:30080
+### Testing from Terminal
+```bash
+# Direct access to the Ingress controller
+curl http://localhost
 ```
-Open port 30080 in the Killercoda UI to see the frontend. You can now interact with the PostgreSQL database.
+
+### Testing from Browser
+Simply visit: `http://<KILLERCODA_IP>`
+(You no longer need to edit the `hosts` file).
 
 ---
 
@@ -571,7 +605,7 @@ kubectl delete namespace python-demo
 | Image handling | `ctr -n k8s.io` | Docker != containerd stores |
 | Service discovery | `http://python-backend-svc:8000` | CoreDNS resolves service name |
 | Load balancing | Multiple backend replicas | Service distributes traffic |
-| NodePort | External access | `node-ip:30080` accessible from outside |
+| Ingress Routing | `Host: python-app.local` | Path-based routing and entry point |
 
 ---
 

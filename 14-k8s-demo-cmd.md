@@ -155,18 +155,25 @@ kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/backend-deployment.yaml
 kubectl apply -f k8s/backend-service.yaml
 
-# 3. Deploy Frontend (External NodePort)
+# 3. Deploy Frontend (Internal)
 kubectl apply -f k8s/frontend-deployment.yaml
 kubectl apply -f k8s/frontend-service.yaml
+
+# 4. Deploy Ingress (External Entry Point)
+# NOTE: Ensure Ingress Controller is installed first:
+# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+
+kubectl apply -f k8s/ingress.yaml
 ```
 
 ### 5.3 Verify & Access
 ```bash
 # Check all resources in the namespace
 kubectl get all -n python-demo
+kubectl get ingress -n python-demo
 
-# Access the frontend via the NodePort (30080)
-curl http://localhost:30080
+# Access via Ingress (Direct IP access)
+curl http://localhost
 ```
 
 ---
